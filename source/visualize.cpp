@@ -68,10 +68,14 @@ int main(int argc, char** argv)
   parray.header.stamp = cur_t;
   visualization_msgs::MarkerArray markerArray;
 
-  cout<<"push enter to view"<<endl;
-  getchar();
+  pcl::PointCloud<PointType>::Ptr pc_all(new pcl::PointCloud<PointType>);
+
+
+  // cout<<"push enter to view"<<endl;
+  // getchar();
   for(size_t i = 0; i < pose_size; i++)
   {
+    if(i % 5 != 0) continue;
     mypcl::loadPCD(file_path + "pcd/", pcd_name_fill_num, pc_surf, i);
 
     pcl::PointCloud<PointType>::Ptr pc_filtered(new pcl::PointCloud<PointType>);
@@ -86,6 +90,11 @@ int main(int argc, char** argv)
     
     mypcl::transform_pointcloud(*pc_filtered, *pc_filtered, pose_vec[i].t, pose_vec[i].q);
     downsample_voxel(*pc_filtered, downsample_size);
+    if (false)
+    {
+      *pc_all += *pc_filtered;
+    }
+    
 
     pcl::toROSMsg(*pc_filtered, cloudMsg);
     cloudMsg.header.frame_id = "camera_init";
@@ -167,6 +176,11 @@ int main(int argc, char** argv)
 
     ros::Duration(0.001).sleep();
   }
+  ROS_INFO("start downsize and save point cloud.");
+  downsample_voxel(*pc_all, downsample_size);
+  pcl::io::savePCDFile("/home/ryan/slam/hba_ws/src/HBA/PCD/cloud.pcd", *pc_all);
+  ROS_INFO("save point cloud end.");
+
 
   ros::Rate loop_rate(1);
   while(ros::ok())

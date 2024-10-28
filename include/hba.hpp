@@ -42,7 +42,7 @@ public:
     max_iter = 10;
     downsample_size = 0.1;
     voxel_size = 4.0;
-    eigen_ratio = 0.1;
+    eigen_ratio = 0.05; // 0.1 try 0.05
     reject_ratio = 0.05;
     pose_vec.clear(); mthreads.clear(); pcds.clear();
     hessians.clear(); mem_costs.clear();

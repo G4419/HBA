@@ -5,6 +5,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/filters/passthrough.h>
@@ -46,11 +47,13 @@ int main(int argc, char** argv)
   string file_path;
   double downsample_size, marker_size;
   int pcd_name_fill_num;
+  bool save_cloud;
 
   nh.getParam("file_path", file_path);
   nh.getParam("downsample_size", downsample_size);
   nh.getParam("pcd_name_fill_num", pcd_name_fill_num);
   nh.getParam("marker_size", marker_size);
+  nh.getParam("save_cloud", save_cloud);
 
   sensor_msgs::PointCloud2 debugMsg, cloudMsg, outMsg;
   vector<mypcl::pose> pose_vec;
@@ -71,28 +74,31 @@ int main(int argc, char** argv)
   pcl::PointCloud<PointType>::Ptr pc_all(new pcl::PointCloud<PointType>);
 
 
-  // cout<<"push enter to view"<<endl;
-  // getchar();
+  cout<<"push enter to view"<<endl;
+  getchar();
   for(size_t i = 0; i < pose_size; i++)
   {
-    if(i % 5 != 0) continue;
+    // if(i % 5 != 0) continue;
     mypcl::loadPCD(file_path + "pcd/", pcd_name_fill_num, pc_surf, i);
 
     pcl::PointCloud<PointType>::Ptr pc_filtered(new pcl::PointCloud<PointType>);
-    pc_filtered->resize(pc_surf->points.size());
-    int cnt = 0;
-    for(size_t j = 0; j < pc_surf->points.size(); j++)
+    // pc_filtered->resize(pc_surf->points.size());
+    // int cnt = 0;
+    // for(size_t j = 0; j < pc_surf->points.size(); j++)
+    // {
+    //   pc_filtered->points[cnt] = pc_surf->points[j];
+    //   cnt++;
+    // }
+    // pc_filtered->resize(cnt);
+    mypcl::transform_pointcloud(*pc_surf, *pc_surf, pose_vec[i].t, pose_vec[i].q);
+    // *pc_filtered = *pc_surf;
+    downsample_voxel(*pc_surf, *pc_filtered, downsample_size);
+
+
+    // downsample_voxel(*pc_filtered, downsample_size);
+    if (save_cloud)
     {
-      pc_filtered->points[cnt] = pc_surf->points[j];
-      cnt++;
-    }
-    pc_filtered->resize(cnt);
-    
-    mypcl::transform_pointcloud(*pc_filtered, *pc_filtered, pose_vec[i].t, pose_vec[i].q);
-    downsample_voxel(*pc_filtered, downsample_size);
-    if (false)
-    {
-      *pc_all += *pc_filtered;
+      *pc_all += *pc_surf;
     }
     
 
@@ -176,12 +182,15 @@ int main(int argc, char** argv)
 
     ros::Duration(0.001).sleep();
   }
-  ROS_INFO("start downsize and save point cloud.");
-  downsample_voxel(*pc_all, downsample_size);
-  pcl::io::savePCDFile("/home/ryan/slam/hba_ws/src/HBA/PCD/cloud.pcd", *pc_all);
-  ROS_INFO("save point cloud end.");
-
-
+  ROS_INFO("display cloud done.");
+  if (save_cloud)
+  {
+      ROS_INFO("start downsize and save point cloud.");
+      downsample_voxel(*pc_all, 0.01);
+      pcl::io::savePCDFile("/home/ryan/slam/hba_ws/src/HBA/PCD/cloud.pcd", *pc_all, true);
+      ROS_INFO("save point cloud end.");
+  }
+  
   ros::Rate loop_rate(1);
   while(ros::ok())
   {

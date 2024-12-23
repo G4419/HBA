@@ -417,7 +417,7 @@ void global_ba(LAYER& layer)
       dsp_t += ros::Time::now().toSec() - t0;
       t0 = ros::Time::now().toSec();
       cut_voxel(surf_map, *src_pc[i], Quaterniond(x_buf[i].R), x_buf[i].p, i,
-                layer.voxel_size, window_size, layer.eigen_ratio*2);
+                layer.voxel_size, window_size, layer.eigen_ratio); //layer.eigen_ratio*2
       cut_t += ros::Time::now().toSec() - t0;
     }
     t0 = ros::Time::now().toSec();
